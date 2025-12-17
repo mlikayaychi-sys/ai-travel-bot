@@ -1,0 +1,41 @@
+{
+  "tehran": {
+    "city": "تهران",
+    "places": {
+      "تاریخی": [
+        {
+          "name": "کاخ گلستان",
+          "desc": "یکی از قدیمی‌ترین بناهای تهران با معماری قاجاری.",
+          "image": "https://upload.wikimedia.org/wikipedia/commons/3/34/Golestan_Palace_Tehran.jpg"
+        }
+      ],
+      "طبیعت": [
+        {
+          "name": "دربند",
+          "desc": "مسیر کوه‌نوردی و طبیعت بسیار محبوب در شمال تهران.",
+          "image": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Darband_Tehran.jpg"
+        }
+      ]
+    }
+  },
+
+  "shiraz": {
+    "city": "شیراز",
+    "places": {
+      "تاریخی": [
+        {
+          "name": "تخت جمشید",
+          "desc": "اثری باشکوه از دوره هخامنشیان.",
+          "image": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Persepolis_Iran.JPG"
+        }
+      ],
+      "طبیعت": [
+        {
+          "name": "باغ ارم",
+          "desc": "باغی زیبا با گیاهان متنوع و معماری جذاب.",
+          "image": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Eram_Garden_in_Shiraz.jpg"
+        }
+      ]
+    }
+  }
+}
