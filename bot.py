@@ -7,7 +7,6 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-# 🔐 توکن بات خودت
 BOT_TOKEN = "8200801257:AAEGbq3yTEqwOt-ab9dxGKZuVJ_wlTiw3vk"
 
 # حافظه FSM
@@ -15,17 +14,15 @@ storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=storage)
 
-# خواندن JSON
+# خواندن JSON مکان‌ها
 with open("places.json", "r", encoding="utf-8") as f:
     places_data = json.load(f)
 
-# لیست شهرها
 IRAN_CITIES = [
     "تهران", "کرج", "اصفهان", "شیراز", "مشهد", "تبریز", "قم", "رشت",
     "اهواز", "یزد", "کیش", "قشم", "ارومیه", "زنجان", "سنندج", "همدان"
 ]
 
-# دسته‌بندی‌ها و کلمات کلیدی
 CATEGORY_KEYWORDS = {
     "تاریخی": ["تاریخی", "قدیمی", "موزه", "کاخ", "قلعه"],
     "طبیعت": ["طبیعت", "پارک", "کوه", "جنگل", "دریا", "دریاچه", "باغ"],
@@ -33,7 +30,6 @@ CATEGORY_KEYWORDS = {
     "مرکز خرید": ["مرکز خرید", "بازار", "مال"]
 }
 
-# نگاشت دسته‌بندی به JSON
 CATEGORY_MAP = {
     "تاریخی": "تاریخی_فرهنگی",
     "طبیعت": "طبیعت",
@@ -43,9 +39,9 @@ CATEGORY_MAP = {
 
 # تعریف وضعیت FSM
 class PlaceStates(StatesGroup):
-    waiting_for_category = State()  # کاربر شهر را فرستاده، منتظر دسته‌بندی
+    waiting_for_category = State()  # وقتی فقط شهر فرستاده شد
 
-# دستور start / help
+# ======== استارت بات ========
 @dp.message(Command(commands=["start", "help"]))
 async def start_cmd(message: types.Message, state: FSMContext):
     await state.clear()
@@ -58,7 +54,7 @@ async def start_cmd(message: types.Message, state: FSMContext):
         "• اصفهان تفریحی"
     )
 
-# تشخیص شهر و دسته‌بندی از متن
+# ======== تشخیص شهر و دسته‌بندی ========
 def smart_detect(text):
     text = text.strip()
     city = None
@@ -76,20 +72,37 @@ def smart_detect(text):
             break
     return city, category
 
-# هندل پیام‌ها
+# ======== هندل پیام‌ها ========
 @dp.message()
 async def handle_message(message: types.Message, state: FSMContext):
-    text = (message.text or "").strip()
+    state_data = await state.get_data()
+    current_state = await state.get_state()
+
+    # اگر در وضعیت انتظار دسته‌بندی هستیم
+    if current_state == PlaceStates.waiting_for_category.state:
+        category_text = message.text.strip()
+        category = CATEGORY_MAP.get(category_text)
+        city = state_data.get("city")
+        if city and category:
+            await show_place(message, city, category)
+        else:
+            await message.reply(
+                "دسته‌بندی معتبر نیست. لطفاً یکی از گزینه‌ها را انتخاب کن:\n"
+                "تاریخی، تفریحی، طبیعت، مرکز خرید"
+            )
+        await state.clear()
+        return
+
+    # حالت معمولی → تشخیص شهر و دسته‌بندی از همان پیام
+    text = message.text.strip()
     city, category = smart_detect(text)
 
     if city and category:
-        # هر دو مشخص شده → نمایش مکان مستقیم
         await show_place(message, city, category)
         await state.clear()
         return
 
     if city and not category:
-        # فقط شهر → ذخیره در state و درخواست دسته‌بندی
         await state.update_data(city=city)
         await state.set_state(PlaceStates.waiting_for_category)
         keyboard = types.ReplyKeyboardMarkup(
@@ -105,17 +118,9 @@ async def handle_message(message: types.Message, state: FSMContext):
         await message.reply(f"برای {city} دنبال چه نوع جایی هستی؟ 🤔", reply_markup=keyboard)
         return
 
-    # اگر فقط دسته‌بندی فرستاده شد و شهر در state ذخیره است
-    state_data = await state.get_data()
-    city_from_state = state_data.get("city")
-    if category and city_from_state:
-        await show_place(message, city_from_state, category)
-        await state.clear()
-        return
-
     await message.reply("لطفاً ابتدا شهر یا شهر + دسته‌بندی را بنویسید 🌍")
 
-# نمایش مکان
+# ======== تابع نمایش مکان ========
 async def show_place(message: types.Message, city, category):
     category_mapped = CATEGORY_MAP.get(category, category)
 
@@ -140,7 +145,7 @@ async def show_place(message: types.Message, city, category):
     caption = f"📍 <b>{place['name']}</b>\n\n{place['description']}\n\n🏙️ شهر: {city}\n🏷️ نوع: {category}"
     await message.reply(caption, parse_mode="HTML", reply_markup=keyboard)
 
-# هندل دکمه مکان بعدی
+# ======== هندل دکمه مکان بعدی ========
 @dp.callback_query()
 async def handle_callback(call: types.CallbackQuery):
     data = call.data
@@ -161,7 +166,7 @@ async def handle_callback(call: types.CallbackQuery):
         caption = f"📍 <b>{place['name']}</b>\n\n{place['description']}\n\n🏙️ شهر: {city}\n🏷️ نوع: {category}"
         await call.message.edit_text(caption, parse_mode="HTML", reply_markup=keyboard)
 
-# اجرای بات
+# ======== اجرای بات ========
 if __name__ == "__main__":
     print("Bot is running...")
     asyncio.run(dp.start_polling(bot))
