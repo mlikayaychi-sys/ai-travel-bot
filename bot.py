@@ -37,11 +37,11 @@ CATEGORY_MAP = {
     "مرکز خرید": "مرکز_خرید"
 }
 
-# تعریف وضعیت FSM
+# وضعیت FSM
 class PlaceStates(StatesGroup):
-    waiting_for_category = State()  # وقتی فقط شهر فرستاده شد
+    waiting_for_category = State()
 
-# ======== استارت بات ========
+# استارت بات
 @dp.message(Command(commands=["start", "help"]))
 async def start_cmd(message: types.Message, state: FSMContext):
     await state.clear()
@@ -54,7 +54,7 @@ async def start_cmd(message: types.Message, state: FSMContext):
         "• اصفهان تفریحی"
     )
 
-# ======== تشخیص شهر و دسته‌بندی ========
+# تشخیص شهر و دسته‌بندی
 def smart_detect(text):
     text = text.strip()
     city = None
@@ -72,13 +72,13 @@ def smart_detect(text):
             break
     return city, category
 
-# ======== هندل پیام‌ها ========
+# هندل پیام‌ها
 @dp.message()
 async def handle_message(message: types.Message, state: FSMContext):
     state_data = await state.get_data()
     current_state = await state.get_state()
 
-    # اگر در وضعیت انتظار دسته‌بندی هستیم
+    # اگر در انتظار دسته‌بندی هستیم
     if current_state == PlaceStates.waiting_for_category.state:
         category_text = message.text.strip()
         category = CATEGORY_MAP.get(category_text)
@@ -93,7 +93,7 @@ async def handle_message(message: types.Message, state: FSMContext):
         await state.clear()
         return
 
-    # حالت معمولی → تشخیص شهر و دسته‌بندی از همان پیام
+    # حالت معمولی → تشخیص شهر و دسته‌بندی از پیام
     text = message.text.strip()
     city, category = smart_detect(text)
 
@@ -120,7 +120,7 @@ async def handle_message(message: types.Message, state: FSMContext):
 
     await message.reply("لطفاً ابتدا شهر یا شهر + دسته‌بندی را بنویسید 🌍")
 
-# ======== تابع نمایش مکان ========
+# نمایش مکان
 async def show_place(message: types.Message, city, category):
     category_mapped = CATEGORY_MAP.get(category, category)
 
@@ -135,7 +135,9 @@ async def show_place(message: types.Message, city, category):
 
     place = random.choice(places_list)
 
-    keyboard = types.InlineKeyboardMarkup()
+    # ساخت کیبورد صحیح با inline_keyboard=[]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[])
+
     if "map_url" in place:
         keyboard.add(types.InlineKeyboardButton(text="مشاهده در نقشه", url=place["map_url"]))
     keyboard.add(types.InlineKeyboardButton(
@@ -145,7 +147,7 @@ async def show_place(message: types.Message, city, category):
     caption = f"📍 <b>{place['name']}</b>\n\n{place['description']}\n\n🏙️ شهر: {city}\n🏷️ نوع: {category}"
     await message.reply(caption, parse_mode="HTML", reply_markup=keyboard)
 
-# ======== هندل دکمه مکان بعدی ========
+# هندل دکمه مکان بعدی
 @dp.callback_query()
 async def handle_callback(call: types.CallbackQuery):
     data = call.data
@@ -157,16 +159,18 @@ async def handle_callback(call: types.CallbackQuery):
             await call.message.answer(f"برای {city} مکان {category} ثبت نشده 😔")
             return
         place = random.choice(places_list)
-        keyboard = types.InlineKeyboardMarkup()
+
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[])
         if "map_url" in place:
             keyboard.add(types.InlineKeyboardButton(text="مشاهده در نقشه", url=place["map_url"]))
         keyboard.add(types.InlineKeyboardButton(
             text="مکان بعدی 🔄", callback_data=f"next|{city}|{category}"
         ))
+
         caption = f"📍 <b>{place['name']}</b>\n\n{place['description']}\n\n🏙️ شهر: {city}\n🏷️ نوع: {category}"
         await call.message.edit_text(caption, parse_mode="HTML", reply_markup=keyboard)
 
-# ======== اجرای بات ========
+# اجرای بات
 if __name__ == "__main__":
     print("Bot is running...")
     asyncio.run(dp.start_polling(bot))
