@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
 # 🔐 توکن بات (اگر روی Render هستی بهتره از ENV استفاده کنی)
-BOT_TOKEN = "8200801257:AAFER11KLtTq-oSy-DaCbX90GeGxcqb9TK0"
+BOT_TOKEN = "8200801257:AAEGbq3yTEqwOt-ab9dxGKZuVJ_wlTiw3vk"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
